@@ -20,8 +20,11 @@ if 'user' not in st.session_state:
     st.session_state.scores = [0 for _ in range (5)]
     st.session_state.trial =  0 
 
-tabs = ["Registration", "GAME 1", "GAME 2", "GAME 3", "GAME 4", "GAME 5", "score"] if st.session_state.language == 'english' else ["Inscription", "JEU 1", "JEU 2", "JEU 3", "JEU 4", "JEU 5", "résultats"]
-login, word_game, sound_game, attention, stroop, time_aware, score = st.tabs(tabs)
+game_name = ['Word list', 'Attention', 'Stroop', 'Time'] if st.session_state.language == 'english' else ['Liste de mots', 'Attention', 'Stroop', 'Temps']
+
+tabs = ["Registration"] + game_name + ["score"] if st.session_state.language == 'english' else ["Inscription"] + game_name +  ["résultats"]
+login, word_game, attention, stroop, time_aware, score = st.tabs(tabs)
+
 
 
 def initialisation_game(dict_state) : 
@@ -163,38 +166,8 @@ with word_game :
             st.rerun()
     
     else : 
-        over("game 1")
+        over(f'game {game_name[0]}')
 
-
-with sound_game : 
-
-    st.write('In this part, you will have to estimate the amplitude of different sounds.' if st.session_state.language == 'english' else 'Dans cette partie, vous devrez estimer l\'amplitude de différents sons.')
-
-    if st.session_state.tab_step[2] == 0 :  
-
-        st.write('Sounds will be played by the animator. Please rate the amplitude of each sound on a scale from 1 to 10' if st.session_state.language == 'english' 
-                 else 'Des sons vont être joués par l\'animateurice. Veuillez évaluer l\'amplitude de chaque son sur une échelle de 1 à 10')
-
-        with st.form("Estimation of Sound Amplitudes") : 
-
-            amplitudes = [0 for _ in range (10)]
-            for s in range (10) : 
-                amp = st.slider(f'Sound {s+1}' if st.session_state.language == 'english' else f'Son {s+1}', min_value = 1, max_value = 10, key = f'amp_{s}')
-                amplitudes[s] = amp
-
-            if st.form_submit_button('OK', key = 'submitted2') : 
-                
-                sound_df = read_sheet('game2')
-                sound_df[st.session_state.user] = amplitudes         
-                sound_df = write_sheet('game2', sound_df)
-                st.session_state.tab_step[2] = 1
-                st.session_state.scores[1] = 20 - 4*np.std(amplitudes)
-                st.rerun()
-        
-    
-    else : 
-        over('game 2')
-        restart(2)
 
 with attention : 
 
@@ -253,7 +226,7 @@ with attention :
                 st.rerun()
         
     else : 
-        over('game 3')
+        over(f'game {game_name[1]}')
         
         restart(3)
 
@@ -323,7 +296,7 @@ with stroop :
                 st.rerun()
         
     else : 
-        over('game 4')
+        over(f'game {game_name[2]}')
         
         restart(4)
 
@@ -369,7 +342,7 @@ with time_aware :
             st.rerun()
 
     else : 
-        over('game 5')
+        over(f'game {game_name[3]}')
         
         restart(5)
    
@@ -380,7 +353,7 @@ with score :
     st.write('In this part, you can see your results!' if st.session_state.language == 'english' else 'Dans cette partie, vous pouvez voir vos résultats!')
 
     for i in range (5) :
-        st.write(f'Your score for game {i+1} is : {int(st.session_state.scores[i])}/20' if st.session_state.language == 'english' else f'Votre score pour le jeu {i+1} est : {int(st.session_state.scores[i])}/20')
+        st.write(f'Your score for game {game_name[i]} is : {int(st.session_state.scores[i])}/20' if st.session_state.language == 'english' else f'Votre score pour le jeu {i+1} est : {int(st.session_state.scores[i])}/20')
     
     if st.button('Send scores' if st.session_state.language == 'english' else 'Envoyer les scores', key = 'submit_score') : 
         score_df = read_sheet('scores')
