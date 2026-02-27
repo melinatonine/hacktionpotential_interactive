@@ -61,7 +61,7 @@ def restart(game, button = None) :
 
 
 def over(title = 'this part') : 
-    st.write(f'You are done with {title} {st.session_state.user}' if st.session_state.language == 'english' else f'Vous avez terminé {st.session_state.user}')
+    st.write(f'You are done with {title} {st.session_state.user}' if st.session_state.language == 'english' else f'Vous avez terminé {title} {st.session_state.user}')
 
 
 with login : 
@@ -171,7 +171,7 @@ with word_game :
             st.rerun()
     
     else : 
-        over(f'game {game_name[game]}')
+        over(game_name[game])
 
 
 with attention : 
@@ -232,7 +232,7 @@ with attention :
                 st.rerun()
         
     else : 
-        over(f'game {game_name[game]}')
+        over(game_name[game])
         
         restart(game+1)
 
@@ -304,7 +304,7 @@ with stroop :
                 st.rerun()
         
     else : 
-        over(f'game {game_name[game]}')
+        over(game_name[game])
         
         restart(game+1)
 
@@ -351,7 +351,7 @@ with time_aware :
             st.rerun()
 
     else : 
-        over(f'game {game_name[game]}')
+        over(game_name[game])
         
         restart(game+1)
    
@@ -362,7 +362,7 @@ with score :
     st.write('In this part, you can see your results!' if st.session_state.language == 'english' else 'Dans cette partie, vous pouvez voir vos résultats!')
 
     for i in range (len(game_name)) :
-        st.write(f'Your score for game {game_name[i]} is : {int(st.session_state.scores[i])}/20' if st.session_state.language == 'english' else f'Votre score pour le jeu {i+1} est : {int(st.session_state.scores[i])}/20')
+        st.write(f'Your score for game {game_name[i]} is : {int(st.session_state.scores[i])}/20' if st.session_state.language == 'english' else f'Votre score pour le jeu {game_name[i]} est : {int(st.session_state.scores[i])}/20')
     
     if st.button('Send scores' if st.session_state.language == 'english' else 'Envoyer les scores', key = 'submit_score') : 
         score_df = read_sheet('scores')
