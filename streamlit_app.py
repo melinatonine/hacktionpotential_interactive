@@ -13,14 +13,17 @@ st.title("Interactive session - homepage")
 # Create a connection object.
 conn = st.connection("gsheets", type=GSheetsConnection)
 
-if 'user' not in st.session_state:
-    st.session_state.user = randint(0,1000)
+if 'language' not in st.session_state : 
     st.session_state.language = 'english'
-    st.session_state.tab_step = [0 for _ in range (6)]
-    st.session_state.scores = [0 for _ in range (5)]
-    st.session_state.trial =  0 
 
 game_name = ['Word list', 'Attention', 'Stroop', 'Time'] if st.session_state.language == 'english' else ['Liste de mots', 'Attention', 'Stroop', 'Temps']
+
+if 'user' not in st.session_state:
+    st.session_state.user = randint(0,1000)
+    st.session_state.tab_step = [0 for _ in range (len(game_name)+1)]
+    st.session_state.scores = [0 for _ in range (len(game_name))]
+    st.session_state.trial =  0 
+
 
 tabs = ["Registration"] + game_name + ["score"] if st.session_state.language == 'english' else ["Inscription"] + game_name +  ["résultats"]
 login, word_game, attention, stroop, time_aware, score = st.tabs(tabs)
@@ -93,6 +96,8 @@ with word_game :
     dt = 1.5
     recall_delay = 5
 
+    game = 0 
+
     @st.cache_data
     def listwords(words):
         word_list = ''
@@ -104,7 +109,7 @@ with word_game :
     st.write('In this part, you will need to memorize and recite a list of words.' if st.session_state.language == 'english'
               else 'Dans cette partie, vous devrez mémoriser puis réciter une liste de mots.')
     
-    if st.session_state.tab_step[1] == 0 : 
+    if st.session_state.tab_step[game+1] == 0 : 
 
         initialisation_game({'words' : []})
         word_df = read_sheet('game1')
@@ -115,10 +120,10 @@ with word_game :
         if st.button('Start' if st.session_state.language == 'english' else 'Démarrer', key = 'st1') :
             st.session_state.start_time = time.time()
             st.session_state.word_index = 0
-            st.session_state.tab_step[1] += 1
+            st.session_state.tab_step[game+1] += 1
             st.rerun()
     
-    elif st.session_state.tab_step[1] == 1 :
+    elif st.session_state.tab_step[game+1] == 1 :
 
         twords = st.session_state.true_words
         count = st_autorefresh(interval=500, limit=int(10*dt*len(twords)+5), key="refresher")
@@ -133,11 +138,11 @@ with word_game :
         elif elapsed < len(twords)*dt + recall_delay : 
             st.write('Get ready to recall the words!' if st.session_state.language == 'english' else 'Préparez-vous à réciter les mots !')
         else : 
-            st.session_state.tab_step[1] += 1
+            st.session_state.tab_step[game+1] += 1
             st.rerun()
 
 
-    elif st.session_state.tab_step[1] == 2 : 
+    elif st.session_state.tab_step[game+1] == 2 : 
 
         with st.form('Words entry', clear_on_submit = True) : 
             w = st.text_input('Enter words here' if st.session_state.language == 'english' else 'Entrez les mots', value="", 
@@ -161,12 +166,12 @@ with word_game :
                     word_df.loc[i[0], 'COUNT'] += 1
                     score += 1
             word_df = write_sheet('game1', word_df)
-            st.session_state.scores[0] = score
-            st.session_state.tab_step[1] += 1
+            st.session_state.scores[game] = score
+            st.session_state.tab_step[game+1] += 1
             st.rerun()
     
     else : 
-        over(f'game {game_name[0]}')
+        over(f'game {game_name[game]}')
 
 
 with attention : 
@@ -175,8 +180,9 @@ with attention :
              else 'Dans cette partie, vous allez voir une série de lettres. Pour chaque lettre, vous devrez cliquer sur "Click si X" si vous pensez que la lettre est un "X", et "Click si pas X" si vous pensez que ce n\'est pas un "X". Essayez d\'être aussi rapide et précis que possible !')
 
     dt = 2
+    game = 1
 
-    if st.session_state.tab_step[3] == 0 : 
+    if st.session_state.tab_step[game+1] == 0 : 
 
         initialisation_game({"letter_count": 0})
 
@@ -185,17 +191,17 @@ with attention :
             attention_df = read_sheet('game3s')
             letters = attention_df['LETTER']
             initialisation_game({"letters" : letters, "type_click_3" : [None for _ in range (len(letters))], "delay_3" : [None for _ in range (len(letters))]})
-            st.session_state.tab_step[3] = 1 
+            st.session_state.tab_step[game+1] = 1 
             st.rerun()
 
-    elif st.session_state.tab_step[3] == 1 : 
+    elif st.session_state.tab_step[game+1] == 1 : 
         
         if st.button("Start", key = 'st3'):
             initialisation_game({"start_time_3" : time.time(), "letter_index" : 0})   
-            st.session_state.tab_step[3] = 2 
+            st.session_state.tab_step[game+1] = 2 
             st.rerun()
     
-    elif st.session_state.tab_step[3] == 2 :
+    elif st.session_state.tab_step[game+1] == 2 :
 
         letters = st.session_state.letters
         count = st_autorefresh(interval=100, limit=int(10*dt*len(letters)+5), key="refresher")
@@ -221,20 +227,22 @@ with attention :
                 attention_df[st.session_state.user] = rts         
                 attention_df = write_sheet('game3t', attention_df)
 
-                st.session_state.tab_step[3] = 3
-                st.session_state.scores[2] = sum(success)/2
+                st.session_state.tab_step[game+1] = 3
+                st.session_state.scores[game] = sum(success)/2
                 st.rerun()
         
     else : 
-        over(f'game {game_name[1]}')
+        over(f'game {game_name[game]}')
         
-        restart(3)
+        restart(game+1)
 
 
 
 with stroop : 
 
     dt = 2
+    game = 2
+
     list_colors = ['red', 'green', 'blue', 'pink', 'orange', 'black'] if st.session_state.language == 'english' else ['rouge', 'vert', 'bleu', 'rose', 'orange', 'noir']
 
     st.write('In this part, read the word (not the color of the writing) and click sur designated color. Try to be as fast and accurate as possible!' if st.session_state.language == 'english'
@@ -242,24 +250,24 @@ with stroop :
     
     st.write('Example: if you see  :green[red] , you should click on **red**.' if st.session_state.language == 'english' else 'Exemple : si vous voyez :green[rouge] , vous devez cliquer sur **rouge**.')
     
-    if st.session_state.tab_step[4] == 0 :
+    if st.session_state.tab_step[game+1] == 0 :
         if st.button('initialisation', key = 'init4') : 
             stroop_df = read_sheet('game4s')
             names = stroop_df['NAME'] if st.session_state.language == 'english' else stroop_df['NOM']
             initialisation_game({"names" : names, "colors" : stroop_df['COLOR'], "type_click_4" : [None for _ in range (len(names))], 
                                     "delay_4" : [None for _ in range (len(names))]})
-            st.session_state.tab_step[4] = 1 
+            st.session_state.tab_step[game+1] = 1 
             st.rerun()
         
-    elif st.session_state.tab_step[4] == 1 : 
+    elif st.session_state.tab_step[game+1] == 1 : 
 
         if st.button("Start" if st.session_state.language == 'english' else "Démarrer", key = 'st4'):
 
             initialisation_game({"start_time_4" : time.time(), "color_index" : 0})
-            st.session_state.tab_step[4] = 2 
+            st.session_state.tab_step[game+1] = 2 
             st.rerun()
 
-    elif st.session_state.tab_step[4] == 2 :
+    elif st.session_state.tab_step[game+1] == 2 :
         names = st.session_state.names
         colors = st.session_state.colors
 
@@ -291,14 +299,14 @@ with stroop :
                 color_df[st.session_state.user] = rts         
                 color_df = write_sheet('game4t', color_df)
 
-                st.session_state.tab_step[4] = 3
-                st.session_state.scores[3] = sum(success)
+                st.session_state.tab_step[game+1] = 3
+                st.session_state.scores[game] = sum(success)
                 st.rerun()
         
     else : 
-        over(f'game {game_name[2]}')
+        over(f'game {game_name[game]}')
         
-        restart(4)
+        restart(game+1)
 
 
 
@@ -309,26 +317,27 @@ with time_aware :
     st.write('In this part, you will have to estimate when 30 seconds have passed. Try to be as accurate as possible!' if st.session_state.language == 'english' else 'Dans cette partie, vous devrez estimer quand 30 secondes se sont écoulées. Essayez d\'être aussi précis que possible !')
     st.write('Click on "Start" to start the timer, and then click on "Stop" when you think 30 seconds have passed.' if st.session_state.language == 'english' else 'Cliquez sur "Démarrer" pour lancer le chronomètre, puis cliquez sur "Stop" lorsque vous pensez que 30 secondes se sont écoulées.')
 
+    game = 3
     
     def stop_click() : 
         delta = time.time() - st.session_state.start_time_guess
         st.session_state.time_stop_click = delta
-        st.session_state.tab_step[5] = 2
+        st.session_state.tab_step[game+1] = 2
 
 
-    if st.session_state.tab_step[5] == 0  :
+    if st.session_state.tab_step[game+1] == 0  :
 
         initialisation_game({"time_stop_click" : 0})
         if st.button("Start" if st.session_state.language == 'english' else "Démarrer", key = 'st5'):
             st.session_state.start_time_guess = time.time()
-            st.session_state.tab_step[5] = 1
+            st.session_state.tab_step[game+1] = 1
             st.rerun()
 
-    elif st.session_state.tab_step[5] == 1 : 
+    elif st.session_state.tab_step[game+1] == 1 : 
         st.button('STOP', on_click = stop_click)
     
 
-    elif st.session_state.tab_step[5] == 2: 
+    elif st.session_state.tab_step[game+1] == 2: 
 
         st.write(f'{int(st.session_state.time_stop_click)} seconds have passed' if st.session_state.language == 'english' else f'{int(st.session_state.time_stop_click)} secondes se sont écoulées')
 
@@ -337,14 +346,14 @@ with time_aware :
             time_df[st.session_state.user] = st.session_state.time_stop_click         
             time_df = write_sheet('game5', time_df)
 
-            st.session_state.scores[4] = 20 - abs(st.session_state.time_stop_click - 30)
-            st.session_state.tab_step[5] = 3
+            st.session_state.scores[game] = 20 - abs(st.session_state.time_stop_click - 30)
+            st.session_state.tab_step[game+1] = 3
             st.rerun()
 
     else : 
-        over(f'game {game_name[3]}')
+        over(f'game {game_name[game]}')
         
-        restart(5)
+        restart(game+1)
    
 
             
@@ -352,7 +361,7 @@ with score :
 
     st.write('In this part, you can see your results!' if st.session_state.language == 'english' else 'Dans cette partie, vous pouvez voir vos résultats!')
 
-    for i in range (5) :
+    for i in range (len(game_name)) :
         st.write(f'Your score for game {game_name[i]} is : {int(st.session_state.scores[i])}/20' if st.session_state.language == 'english' else f'Votre score pour le jeu {i+1} est : {int(st.session_state.scores[i])}/20')
     
     if st.button('Send scores' if st.session_state.language == 'english' else 'Envoyer les scores', key = 'submit_score') : 
