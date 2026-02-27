@@ -73,6 +73,7 @@ with login :
 
         if st.button('OK', key = 'submitted0') : 
             user_df = read_sheet('users')
+            st.write(user_df)
             list_users = list(user_df['user-list'])
             if username in list_users : 
 
@@ -204,7 +205,7 @@ with attention :
     elif st.session_state.tab_step[game+1] == 2 :
 
         letters = st.session_state.letters
-        count = st_autorefresh(interval=100, limit=int(10*dt*len(letters)+5), key="refresher")
+        count = st_autorefresh(interval=100, limit=int(10*dt*len(letters)+1), key="refresher")
         elapsed = time.time() - st.session_state.start_time_3
         st.session_state.letter_index = int(elapsed // dt)
 
@@ -240,7 +241,7 @@ with attention :
 
 with stroop : 
 
-    dt = 2
+    dt = 2.5
     game = 2
 
     list_colors = ['red', 'green', 'blue', 'pink', 'orange', 'black'] if st.session_state.language == 'english' else ['rouge', 'vert', 'bleu', 'rose', 'orange', 'noir']
@@ -261,7 +262,7 @@ with stroop :
         
     elif st.session_state.tab_step[game+1] == 1 : 
 
-        if st.button("Start" if st.session_state.language == 'english' else "Démarrer", key = 'st4'):
+        if st.button("Press when you are ready!" if st.session_state.language == 'english' else "Clique ici pour commencer !", key = 'st4'):
 
             initialisation_game({"start_time_4" : time.time(), "color_index" : 0})
             st.session_state.tab_step[game+1] = 2 
@@ -364,7 +365,7 @@ with score :
     for i in range (len(game_name)) :
         st.write(f'Your score for game {game_name[i]} is : {int(st.session_state.scores[i])}/20' if st.session_state.language == 'english' else f'Votre score pour le jeu {game_name[i]} est : {int(st.session_state.scores[i])}/20')
     
-    if st.button('Send scores' if st.session_state.language == 'english' else 'Envoyer les scores', key = 'submit_score') : 
+    if st.button('Send scores' if st.session_state.language == 'english' else 'Envoyer les scores', key = 'submit_final_score') : 
         score_df = read_sheet('scores')
         score_df[st.session_state.user] = st.session_state.scores         
         score_df = write_sheet('scores', score_df)
