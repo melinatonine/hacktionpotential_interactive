@@ -371,7 +371,7 @@ with time_aware :
             time_df[st.session_state.user] = st.session_state.time_stop_click         
             time_df = write_sheet('game5', time_df)
 
-            st.session_state.scores[game] = 20 - abs(st.session_state.time_stop_click - 30)
+            st.session_state.scores[game] = max(0,20 - abs(st.session_state.time_stop_click - 30))
             st.session_state.tab_step[game+1] = 3
             st.rerun()
 
