@@ -1,3 +1,4 @@
+
 from cProfile import label
 
 import streamlit as st
@@ -34,11 +35,11 @@ def initialisation_game(dict_state) :
     for key in dict_state.keys() : 
         st.session_state[key] = dict_state[key] 
                         
-@st.cache_data
+#@st.cache_data
 def read_sheet(sheet) : 
     return conn.read(worksheet = sheet)
 
-@st.cache_data
+#@st.cache_data
 def write_sheet(sheet, df) : 
     return conn.update(data=df, worksheet = sheet) 
 
@@ -73,7 +74,7 @@ with login :
 
         if st.button('OK', key = 'submitted0') : 
             user_df = read_sheet('users')
-            st.write(user_df)
+            # st.write(user_df)
             list_users = list(user_df['user-list'])
             if username in list_users : 
 
