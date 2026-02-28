@@ -1,4 +1,3 @@
-
 from cProfile import label
 
 import streamlit as st
@@ -44,11 +43,16 @@ def write_sheet(sheet, df) :
     return conn.update(data=df, worksheet = sheet) 
 
 
-def save_click(game, label, position) : 
+def save_click(game, label, position, dt_game) : 
     if st.session_state[f"type_click_{game}"][position] is None : 
         st.session_state[f"type_click_{game}"][position] = label
-        # get the delay since last letter shown
-        st.session_state[f"delay_{game}"][position] = time.time() - st.session_state[f'start_time_{game}'] - dt*position
+        # get the delay between stimulus appearance and click
+        shown_times = st.session_state.get(f"shown_time_{game}", None)
+        if shown_times is not None and shown_times[position] is not None:
+            stim_start = shown_times[position]
+        else:
+            stim_start = st.session_state[f'start_time_{game}'] + dt_game * position
+        st.session_state[f"delay_{game}"][position] = max(0.0, time.time() - stim_start)
 
 def restart(game, button = None) :
 
@@ -192,7 +196,7 @@ with attention :
             
             attention_df = read_sheet('game3s')
             letters = attention_df['LETTER']
-            initialisation_game({"letters" : letters, "type_click_3" : [None for _ in range (len(letters))], "delay_3" : [None for _ in range (len(letters))]})
+            initialisation_game({"letters" : letters, "type_click_3" : [None for _ in range (len(letters))], "delay_3" : [dt for _ in range (len(letters))], "shown_time_3" : [None for _ in range (len(letters))]})
             st.session_state.tab_step[game+1] = 1 
             st.rerun()
 
@@ -212,9 +216,11 @@ with attention :
 
         if st.session_state.letter_index < len(letters):
             letter = letters[st.session_state.letter_index]
+            if st.session_state['shown_time_3'][st.session_state.letter_index] is None:
+                st.session_state['shown_time_3'][st.session_state.letter_index] = time.time()
             st.write(letter)             
-            st.button("Click if X" if st.session_state.language == 'english' else "Cliquez si X", on_click = save_click, args = [3, "X", st.session_state.letter_index], key = 'clickx')
-            st.button("Click if not X" if st.session_state.language == 'english' else "Cliquez si pas X", on_click = save_click, args = [3, "not_X", st.session_state.letter_index],  key = 'clicknotx')
+            st.button("Click if X" if st.session_state.language == 'english' else "Cliquez si X", on_click = save_click, args = [3, "X", st.session_state.letter_index, dt], key = 'clickx')
+            st.button("Click if not X" if st.session_state.language == 'english' else "Cliquez si pas X", on_click = save_click, args = [3, "not_X", st.session_state.letter_index, dt],  key = 'clicknotx')
 
         else:
             success = [1 if (letters[k] == "X" and st.session_state['type_click_3'][k] == "X") or (letters[k] != "X" and st.session_state['type_click_3'][k] == "not_X") else 0 for k in range (len(letters))]
@@ -257,7 +263,7 @@ with stroop :
             stroop_df = read_sheet('game4s')
             names = stroop_df['NAME'] if st.session_state.language == 'english' else stroop_df['NOM']
             initialisation_game({"names" : names, "colors" : stroop_df['COLOR'], "type_click_4" : [None for _ in range (len(names))], 
-                                    "delay_4" : [None for _ in range (len(names))]})
+                                    "delay_4" : [dt for _ in range (len(names))], "shown_time_4" : [None for _ in range (len(names))]})
             st.session_state.tab_step[game+1] = 1 
             st.rerun()
         
@@ -280,13 +286,15 @@ with stroop :
         if st.session_state.color_index < len(names):
             word = names[st.session_state.color_index]
             color = colors[st.session_state.color_index]
+            if st.session_state['shown_time_4'][st.session_state.color_index] is None:
+                st.session_state['shown_time_4'][st.session_state.color_index] = time.time()
             
             s = f"<p style='font-size:20px;color:{color};'>{word}</p>"
             st.markdown(s, unsafe_allow_html=True)   
       
 
             for color_option in list_colors : 
-                st.button(f'**{color_option}**', on_click = save_click, args = [4, color_option, st.session_state.color_index])
+                st.button(f'**{color_option}**', on_click = save_click, args = [4, color_option, st.session_state.color_index, dt])
 
         else:
             success = [1 if st.session_state['type_click_4'][k] == names[k] else 0 for k in range (len(names))]
@@ -371,3 +379,4 @@ with score :
         score_df[st.session_state.user] = st.session_state.scores         
         score_df = write_sheet('scores', score_df)
         st.write('Scores sent! Thank you for participating!' if st.session_state.language == 'english' else 'Scores envoyés! Merci pour votre participation !')
+
