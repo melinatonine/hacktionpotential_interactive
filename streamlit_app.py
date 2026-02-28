@@ -40,7 +40,22 @@ def read_sheet(sheet) :
 
 #@st.cache_data
 def write_sheet(sheet, df) : 
-    return conn.update(data=df, worksheet = sheet) 
+    latest_df = conn.read(worksheet = sheet)
+
+    if latest_df is None or len(latest_df) == 0:
+        merged_df = df.copy()
+    else:
+        latest_df = pd.DataFrame(latest_df)
+        merged_df = latest_df.copy()
+
+        max_rows = max(len(merged_df), len(df))
+        merged_df = merged_df.reindex(range(max_rows))
+        df_aligned = df.reindex(range(max_rows))
+
+        for col in df_aligned.columns:
+            merged_df[col] = df_aligned[col]
+
+    return conn.update(data=merged_df, worksheet = sheet) 
 
 
 def save_click(game, label, position, dt_game) : 
@@ -210,11 +225,11 @@ with attention :
     elif st.session_state.tab_step[game+1] == 2 :
 
         letters = st.session_state.letters
-        count = st_autorefresh(interval=100, limit=int(10*dt*len(letters)+1), key="refresher")
         elapsed = time.time() - st.session_state.start_time_3
         st.session_state.letter_index = int(elapsed // dt)
 
         if st.session_state.letter_index < len(letters):
+            count = st_autorefresh(interval=100, limit=int(10*dt*len(letters)+1), key="refresher")
             letter = letters[st.session_state.letter_index]
             if st.session_state['shown_time_3'][st.session_state.letter_index] is None:
                 st.session_state['shown_time_3'][st.session_state.letter_index] = time.time()
@@ -279,11 +294,11 @@ with stroop :
         names = st.session_state.names
         colors = st.session_state.colors
 
-        count = st_autorefresh(interval=100, limit=int(10*dt*len(names)+5), key="refresher4")
         elapsed = time.time() - st.session_state.start_time_4
         st.session_state.color_index = int(elapsed // dt)
 
         if st.session_state.color_index < len(names):
+            count = st_autorefresh(interval=100, limit=int(10*dt*len(names)+5), key="refresher4")
             word = names[st.session_state.color_index]
             color = colors[st.session_state.color_index]
             if st.session_state['shown_time_4'][st.session_state.color_index] is None:
@@ -379,4 +394,3 @@ with score :
         score_df[st.session_state.user] = st.session_state.scores         
         score_df = write_sheet('scores', score_df)
         st.write('Scores sent! Thank you for participating!' if st.session_state.language == 'english' else 'Scores envoyés! Merci pour votre participation !')
-
